@@ -1,0 +1,111 @@
+name: run-tests
+
+on:
+  pull_request:
+    branches:
+      - 'main'
+
+# The cancel-in-progress concurrency option can only be specified at the workflow or job level, and job-level concurrency is ineffective when dealing with queued workflows.
+# Given that we don't want to cancel the workflow while fetching mbed-os libraries or flashing, the cancel-in-progress option is set to false to prevent canceling the
+# workflow at these times. However, this still prevents multiple identical queued workflows from piling up.
+concurrency:
+  group: ${{ github.event_name }}.${{ github.head_ref }}.${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    runs-on:
+      - self-hosted
+
+    outputs:
+      target: ${{ steps.get-dev-info.outputs.device }}
+      ser_port: ${{ steps.get-dev-info.outputs.serial }}
+      flash_mntpt: ${{ steps.get-dev-info.outputs.mountpoint }}
+
+    steps:
+     - name: Set Environment Variables
+       run: |
+         echo "MBED_OS_REF_LOCATION=$HOME/${{ github.repository }}/mbed-os-ref" >> "$GITHUB_ENV"
+
+     - name: Get Repo
+       uses: actions/checkout@v3
+       with:
+# Don't run `git clean -ffdx` and `git reset --hard HEAD` in this step to avoid removing `mbed-os/`.
+# These will be run post checkout in the following step
+         clean: false
+
+# Clean up any changes in the working index, including untracked files aside from mbed-os/
+     - name: Post Checkout Cleanup
+       run: |
+         git clean -ffdxe mbed-os
+         git reset --hard HEAD
+
+# Checks if the current reference in mbed-os.lib is the same as what is stored on the runner from the
+# previous workflow. If not, update the stored reference and fetch the new libraries
+# TODO This only handles mbed-os.lib. To be able to handle other .lib files, it would be worth creating
+#      a script or custom action to check/update all library references
+     - name: Check if mbed-os Libraries Need to be Fetched
+       id: check-mbed-os-libs
+       run: |
+         if [[ -f "$MBED_OS_REF_LOCATION/mbed-os.lib" ]]; then
+           if [[ -n $(diff "$MBED_OS_REF_LOCATION/mbed-os.lib" mbed-os.lib) ]]; then
+             cp mbed-os.lib "$MBED_OS_REF_LOCATION"
+             echo "fetch_libs=y" >> "$GITHUB_OUTPUT"
+             echo "Needed to fetch mbed-os libraries because they were not up-to-date on the runner" >> $GITHUB_STEP_SUMMARY
+           else
+             echo "fetch_libs=$([[ -d mbed-os ]] && echo n || echo y)" >> "$GITHUB_OUTPUT"
+             [[ -d mbed-os ]] && \
+               echo "mbed-os libraries are up-to-date :relieved:" >> $GITHUB_STEP_SUMMARY || \
+               echo "Needed to fetch mbed-os libraries because mbed-os did not exist on the runner, but the stored library reference was up-to-date :finnadie:" >> $GITHUB_STEP_SUMMARY
+           fi
+         else
+           mkdir -p "$MBED_OS_REF_LOCATION"
+           cp mbed-os.lib "$MBED_OS_REF_LOCATION"
+           echo "fetch_libs=$([[ -d mbed-os ]] && echo n || echo y)" >> "$GITHUB_OUTPUT"
+           echo "Needed to fetch mbed-os libraries because neither mbed-os nor the stored reference was present on the runner :point_right::point_left:" >> $GITHUB_STEP_SUMMARY
+         fi
+
+     - name: Fetch Mbed Libraries
+       if: steps.check-mbed-os-libs.outputs.fetch_libs == 'y'
+       run: |
+         if [[ -d mbed-os ]]; then
+           echo "Removing mbed-os before fetching libraries"
+           rm -rf mbed-os
+         fi
+         mbed-tools deploy
+
+# Gets device info using `mbed-tools detect` and sets output needed for compiling and flashing
+# NOTE: Expecting '/mnt/$USER/' to be the base path for the mount point, as specified in the runner's ldm (https://github.com/LemonBoy/ldm) configuration, despite /media/[$USER/] typically being the base path for removable media
+     - name: Get Device Info
+       id: get-dev-info
+       run: |
+         detect_out=$(mbed-tools detect)
+         device=$(echo "$detect_out" | grep -oE "NUCLEO_\\S*")
+         serial=$(echo "$detect_out" | grep -oE "/dev/tty\\S*")
+         mountpoint=$(echo "$detect_out" | grep -oE "/mnt/$USER/\\S*")
+         if [[ -z "$device" || -z "$serial" || -z "$mountpoint" ]]; then
+           echo "Failed to detect target, serial port, and/or mount point matching 'NUCLEO_*', '/dev/tty*', and '/mnt/$USER/*', respectively :hurtrealbad:" >> $GITHUB_STEP_SUMMARY
+           exit 1
+         fi
+         echo "device=$device" >> "$GITHUB_OUTPUT"
+         echo "serial=$serial" >> "$GITHUB_OUTPUT"
+         echo "mountpoint=$mountpoint" >> "$GITHUB_OUTPUT"
+         echo "Found target '$device' connected to serial port '$serial' with storage mounted to '$mountpoint' :relieved:" >> $GITHUB_STEP_SUMMARY
+
+  compile-and-flash:
+    needs: setup
+    env:
+      BUILD_PROFILE: develop
+      TOOLCHAIN: GCC_ARM
+    runs-on:
+      - self-hosted
+
+    steps:
+     - name: Compile and Flash
+       run: |
+         mbed-tools configure -t ${{ env.TOOLCHAIN }} -m ${{ needs.setup.outputs.target }}
+         cmake -S . -B cmake_build/${{ needs.setup.outputs.target }}/${{ env.BUILD_PROFILE }}/${{ env.TOOLCHAIN }} -GNinja
+         cmake --build cmake_build/${{ needs.setup.outputs.target }}/${{ env.BUILD_PROFILE }}/${{ env.TOOLCHAIN }}
+         cp cmake_build/${{ needs.setup.outputs.target }}/${{ env.BUILD_PROFILE }}/${{ env.TOOLCHAIN }}/embedded-mbed.bin ${{ needs.setup.outputs.flash_mntpt }}
+         echo "Successfully flashed to ${{ needs.setup.outputs.target }} :v:" >> $GITHUB_STEP_SUMMARY
+
