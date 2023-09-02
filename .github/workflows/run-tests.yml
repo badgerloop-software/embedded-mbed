@@ -1,0 +1,96 @@
+name: run-tests
+
+on:
+  pull_request:
+    branches:
+      - 'main'
+
+# The cancel-in-progress concurrency option can only be specified at the workflow or job level, and job-level concurrency is ineffective when dealing with queued workflows.
+# Given that we don't want to cancel the workflow while fetching mbed-os libraries or flashing, the cancel-in-progress option is set to false to prevent canceling the
+# workflow at these times. However, this still prevents multiple identical queued workflows from piling up.
+concurrency:
+  group: ${{ github.event_name }}.${{ github.head_ref }}.${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    runs-on:
+      - self-hosted
+
+    outputs:
+      target: ${{ steps.get-dev-info.outputs.device }}
+      flash_mntpt: ${{ steps.get-dev-info.outputs.mountpoint }}
+
+    steps:
+     - name: Get Repo
+       uses: actions/checkout@v3
+       with:
+# Don't run `git clean -ffdx` and `git reset --hard HEAD` in this step to avoid removing `mbed-os/`.
+# These will be run post checkout in the following step
+         clean: false
+
+# Clean up any changes in the working index, including untracked files aside from mbed-os/
+     - name: Post Checkout Cleanup
+       run: |
+         git clean -ffdxe mbed-os
+         git reset --hard HEAD
+
+# Gets the two most recent states of the repo on the runner. If any *.lib files changed between the two commits, fetch the libraries
+     - name: Fetch Libraries If Needed
+       run: |
+         commits=$(git reflog -1 | grep -Po "(?<=moving from )\S+|(?<= to )\S+$")
+         commit_arr=(${commits[@]})
+         if [[ "${commit_arr[0]}" == "main" && "$(git reflog | wc -l)" == "1" ]]; then
+           # First time checking out the embedded-mbed repository
+           echo "Needed to fetch mbed-os libraries :finnadie:" >> $GITHUB_STEP_SUMMARY
+           # Fetch libraries
+           mbed-tools deploy
+         elif [[ -n "$(git diff --name-only $commits *.lib)" ]]; then
+           echo "Needed to fetch mbed-os libraries :finnadie:" >> $GITHUB_STEP_SUMMARY
+           if [[ -d mbed-os ]]; then
+             echo "Removing mbed-os before fetching libraries"
+             rm -rf mbed-os
+           fi
+           # Fetch libraries
+           mbed-tools deploy
+         fi
+
+# Gets device info using `mbed-tools detect` and sets output needed for compiling and flashing
+# NOTE: Expecting '/mnt/$USER/' to be the base path for the mount point, as specified in the runner's ldm (https://github.com/LemonBoy/ldm) configuration,
+#       despite /media/[$USER/] typically being the base path for removable media
+     - name: Get Device Info
+       id: get-dev-info
+       run: |
+         # Get the target from the setup configuration file and get information pertaining to it
+         device=$(grep -Po '(^\s+target:\s+)\K.+' setup.yml)
+         detect_out=$(mbed-tools detect | grep "$device")
+         mountpoint=$(echo "$detect_out" | grep -oE "/mnt/$USER/\\S*")
+         if [[ -z "$device" || -z "$mountpoint" ]]; then
+           echo "Failed to detect target and associated mount point matching '$device' and '/mnt/$USER/*', respectively :hurtrealbad:" >> $GITHUB_STEP_SUMMARY
+           echo "Output of \`mbed-tools detect\`:" >> $GITHUB_STEP_SUMMARY
+           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+           echo "$(mbed-tools detect)" >> $GITHUB_STEP_SUMMARY
+           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+           exit 1
+         fi
+         echo "device=$device" >> "$GITHUB_OUTPUT"
+         echo "mountpoint=$mountpoint" >> "$GITHUB_OUTPUT"
+         echo "Found target '$device' with storage mounted to '$mountpoint' :relieved:" >> $GITHUB_STEP_SUMMARY
+
+  compile-and-flash:
+    needs: setup
+    runs-on:
+      - self-hosted
+
+    steps:
+     - name: Compile and Flash
+       env:
+         BUILD_PROFILE: develop
+         TOOLCHAIN: GCC_ARM
+       run: |
+         mbed-tools configure -t ${{ env.TOOLCHAIN }} -m ${{ needs.setup.outputs.target }}
+         cmake -S . -B cmake_build/${{ needs.setup.outputs.target }}/${{ env.BUILD_PROFILE }}/${{ env.TOOLCHAIN }} -GNinja
+         cmake --build cmake_build/${{ needs.setup.outputs.target }}/${{ env.BUILD_PROFILE }}/${{ env.TOOLCHAIN }}
+         cp cmake_build/${{ needs.setup.outputs.target }}/${{ env.BUILD_PROFILE }}/${{ env.TOOLCHAIN }}/embedded-mbed.bin ${{ needs.setup.outputs.flash_mntpt }}
+         echo "Successfully flashed to ${{ needs.setup.outputs.target }} :v:" >> $GITHUB_STEP_SUMMARY
+
