@@ -1,0 +1,16 @@
+# --- Structure ---
+# setup:
+#   target: <target>
+#   devices:
+#     <device>:
+#       <attribute>: <value>
+#   drivers:
+#     <driver>:
+#       <attribute>: <value>
+#
+# NOTE: If <value> is an array, format it as a Python list (i.e. [...])
+
+setup:
+  target: NUCLEO_F767ZI
+  devices:
+  drivers:
