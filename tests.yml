@@ -1,1 +1,7 @@
 NUCLEO_F767ZI:
+  i2c:
+    generic: mock
+    ina219: mock
+  ethernet:
+    ping_tcp_server: mock
+    ping_tcp_client: mock
