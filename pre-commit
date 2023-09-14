@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# If there are no changes to CMakeLists.txt being committed, then there's no need to check this commit's diff
+if [[ -z $(git diff --cached --name-only CMakeLists.txt) ]]; then
+    exit 0
+fi
+
+# Store a diff with every line of CMakeLists.txt in the context to determine if there were any changes between the markers
+diff=$(git diff --cached -U$(wc -l CMakeLists.txt) CMakeLists.txt)
+grep -Pzo " # --- START MACROS ---\n # ---- END MACROS ----\n" <<< "$diff" 2>/dev/null
+
+# Strict check to ensure that each marker is still in the proper location and only appears once
+if [ $(grep -E "^.# --- START MACROS ---$" <<< "$diff" 2>/dev/null | wc -l) != 1 ] || \
+   [ $(grep -E "^.# ---- END MACROS ----$" <<< "$diff" 2>/dev/null | wc -l) != 1 ] || \
+   [ $(grep -Pzo " # --- START MACROS ---\n # ---- END MACROS ----\n" <<< "$diff" 2>/dev/null | wc -l) != 2 ]
+then
+    echo -e "\033[1;31mIllegal Modification:\n    \033[0;31mAttempted to change lines related to start and end macro definition markers in CMakeLists.txt\033[0m\n\n"
+    git diff --cached CMakeLists.txt
+    exit 1
+fi
