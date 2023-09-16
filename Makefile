@@ -2,6 +2,8 @@
 PROFILE?=develop
 TOOLCHAIN?=GCC_ARM
 
+# Useless change
+
 # Parse setup.yml to determine the build target
 TARGET       := $(shell grep -Po '(^\s+target:\s+)\K.+' setup.yml)
 # Check that a value for 'target' was found in setup.yml
