@@ -33,6 +33,7 @@ jobs:
 # Don't run `git clean -ffdx` and `git reset --hard HEAD` in this step to avoid removing `mbed-os/`.
 # These will be run post checkout in the following step
          clean: false
+         fetch-depth: 0
 
 # Clean up any changes in the working index, including untracked files aside from mbed-os/
      - name: Post Checkout Cleanup
