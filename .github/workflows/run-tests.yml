@@ -44,9 +44,13 @@ jobs:
 # previous workflow. If not, update the stored reference and fetch the new libraries
 # TODO This only handles mbed-os.lib. To be able to handle other .lib files, it would be worth creating
 #      a script or custom action to check/update all library references
+# TODO Since we aren't canceling in-progress jobs and will only be handling PRs, see if differences between workflow runs
+#      could be checked using github.workflow_event.before
      - name: Check if mbed-os Libraries Need to be Fetched
        id: check-mbed-os-libs
        run: |
+         echo ${{ github.event.before }} ${{ github.event.after }}
+         git reflog
          if [[ -f "$MBED_OS_REF_LOCATION/mbed-os.lib" ]]; then
            if [[ -n $(diff "$MBED_OS_REF_LOCATION/mbed-os.lib" mbed-os.lib) ]]; then
              cp mbed-os.lib "$MBED_OS_REF_LOCATION"
@@ -75,16 +79,18 @@ jobs:
          mbed-tools deploy
 
 # Gets device info using `mbed-tools detect` and sets output needed for compiling and flashing
-# NOTE: Expecting '/mnt/$USER/' to be the base path for the mount point, as specified in the runner's ldm (https://github.com/LemonBoy/ldm) configuration, despite /media/[$USER/] typically being the base path for removable media
+# NOTE: Expecting '/mnt/$USER/' to be the base path for the mount point, as specified in the runner's ldm (https://github.com/LemonBoy/ldm) configuration,
+#       despite /media/[$USER/] typically being the base path for removable media
      - name: Get Device Info
        id: get-dev-info
        run: |
-         detect_out=$(mbed-tools detect)
-         device=$(echo "$detect_out" | grep -oE "NUCLEO_\\S*")
+         device=$(python3 parseConfigs.py)
+         detect_out=$(mbed-tools detect | grep "$device")
+         #device=$(echo "$detect_out" | grep -oE "NUCLEO_\\S*")
          serial=$(echo "$detect_out" | grep -oE "/dev/tty\\S*")
          mountpoint=$(echo "$detect_out" | grep -oE "/mnt/$USER/\\S*")
-         if [[ -z "$device" || -z "$serial" || -z "$mountpoint" ]]; then
-           echo "Failed to detect target, serial port, and/or mount point matching 'NUCLEO_*', '/dev/tty*', and '/mnt/$USER/*', respectively :hurtrealbad:" >> $GITHUB_STEP_SUMMARY
+         if [[ -z "$serial" || -z "$mountpoint" ]]; then
+           echo "Failed to detect serial port and/or mount point matching '/dev/tty*' and '/mnt/$USER/*', respectively, for target '$device' :hurtrealbad:" >> $GITHUB_STEP_SUMMARY
            exit 1
          fi
          echo "device=$device" >> "$GITHUB_OUTPUT"
@@ -102,6 +108,7 @@ jobs:
 
     steps:
      - name: Compile and Flash
+       if: false # TODO Remove
        run: |
          mbed-tools configure -t ${{ env.TOOLCHAIN }} -m ${{ needs.setup.outputs.target }}
          cmake -S . -B cmake_build/${{ needs.setup.outputs.target }}/${{ env.BUILD_PROFILE }}/${{ env.TOOLCHAIN }} -GNinja
