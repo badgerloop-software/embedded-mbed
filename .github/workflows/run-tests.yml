@@ -44,15 +44,17 @@ jobs:
 # previous workflow. If not, update the stored reference and fetch the new libraries
 # TODO This only handles mbed-os.lib. To be able to handle other .lib files, it would be worth creating
 #      a script or custom action to check/update all library references
-# TODO Since we aren't canceling in-progress jobs and will only be handling PRs, see if differences between workflow runs
-#      could be checked using github.workflow_event.before
      - name: Check if mbed-os Libraries Need to be Fetched
        id: check-mbed-os-libs
        run: |
          echo ${{ github.event.before }} ${{ github.event.after }}
          git reflog
-         hashes=$(git reflog | head -n 2 | grep -Po "(?<= moving from )\S+")
+         # Get the commit hashes of the two most recent states of the repo on the runner
+         # If mbed-os.lib changed between the two states, fetch the mbed libraries in the next step
+         hashes=$(git reflog | head -n 1 | grep -Po "(?<=moving from )\S+|(?<= to )\S+$")
          echo "$hashes"
+         git diff --name-only $hashes
+         echo "SEPARATOR"
          git diff $hashes
          if [[ -f "$MBED_OS_REF_LOCATION/mbed-os.lib" ]]; then
            if [[ -n $(diff "$MBED_OS_REF_LOCATION/mbed-os.lib" mbed-os.lib) ]]; then
