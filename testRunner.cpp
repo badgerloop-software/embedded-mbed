@@ -32,8 +32,7 @@ int main()
     }
     printf("End of mockDevice test\n\n");
 
-    char stop[] = "stop";
-    writeUart(&stop, 4);
+    printf("stop\n");
 
     //while(1) {}
 }
