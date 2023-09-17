@@ -1,6 +1,7 @@
 #include "mbed.h"
 #include "i2cdevice.h"
 #include "mockDevice.h"
+#include "uart.h"
 
 // macros for the mockDevice test
 #define MOCK_DEVICE_ADDR 0x24
@@ -30,6 +31,9 @@ int main()
         printf("Write Error.\n");
     }
     printf("End of mockDevice test\n\n");
+
+    char stop[] = "stop";
+    writeUart(&stop, 4);
 
     //while(1) {}
 }
