@@ -2,7 +2,7 @@
 #define __MOCKDEVICE_H__
 
 #include "mbed.h"
-#include "i2cdevice.h"
+#include "../../drivers/include/i2cdevice.h"
 
 class INA219 : public I2CDevice {
     private:

@@ -1,6 +1,6 @@
 #include "mbed.h"
-#include "i2cdevice.h"
-#include "mockDevice.h"
+#include "./drivers/include/i2cdevice.h"
+#include "./devices/include/mockDevice.h"
 //#include "uart.h"
 
 // macros for the mockDevice test
