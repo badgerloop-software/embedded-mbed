@@ -1,0 +1,32 @@
+# --- Structure ---
+# setup:
+#   target: <target>
+#   devices:
+#     <device>:
+#       <attribute>: <value>
+#   drivers:
+#     <driver>:
+#       <attribute>: <value>
+#
+# NOTE: If <value> is an array, format it as a Python list (i.e. [...])
+
+setup:
+  target: NUCLEO_F767ZI
+  devices:
+    i2c_generic:
+      address: '0x10'
+    ina219:
+      address: '0x24'
+    tcp_server:
+      address: '"192.168.1.16"'
+      port: 4001
+    tcp_client:
+      address: '"192.168.1.15"'
+      port: 4001
+  drivers:
+    i2c:
+      data: PF_0
+      clock: PF_1
+    ethernet:
+      netmask: '"255.255.255.0"'
+      gateway: '"0.0.0.0"'

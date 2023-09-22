@@ -1,7 +1,7 @@
 #include "mbed.h"
 #include "i2cdevice.h"
 #include "mockDevice.h"
-#include "uart.h"
+//#include "uart.h"
 
 // macros for the mockDevice test
 #define MOCK_DEVICE_ADDR 0x24

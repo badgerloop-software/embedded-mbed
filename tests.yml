@@ -1,0 +1,17 @@
+# --- Structure ---
+# <target>:
+#   <driver>:
+#     <test_name>: <mock|hardware|disabled>
+#
+# --- Test Options ---
+# mock: Raspberry Pi emulates the device through software
+# hardware: Hardware setup connected to the UUT. The Raspberry Pi does not mock the device
+# disabled: Test will not be run
+
+NUCLEO_F767ZI:
+  i2c:
+    generic: mock
+    ina219: mock
+  ethernet:
+    ping_tcp_server: mock
+    ping_tcp_client: mock
