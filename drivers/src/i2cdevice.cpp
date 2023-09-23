@@ -1,4 +1,4 @@
-#include "i2cdevice.h"
+#include "../include/i2cdevice.h"
 
 I2CDevice::I2CDevice(I2C* i2cBus, uint8_t addr) {
     this->i2cBus = i2cBus;

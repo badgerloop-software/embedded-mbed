@@ -4,7 +4,7 @@
 #include "mbed.h"
 #include "../../drivers/include/i2cdevice.h"
 
-class INA219 : public I2CDevice {
+class MOCKDEVICE : public I2CDevice {
     private:
         uint8_t read_from_reg(uint8_t reg);
         void write_to_reg(uint8_t reg, uint8_t val);
