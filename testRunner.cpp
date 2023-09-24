@@ -9,10 +9,10 @@
 #define MOCK_DEVICE_WRITE_VAL 0x59
 
 
-I2C i2cBus(PF_0, PF_1); // (sda, scl)
 
 int main()
 {
+    I2C i2cBus(PF_0, PF_1); // (sda, scl)
     printf("Start mockDevice test\n");
     // create new mockDevice
     MOCKDEVICE mockDevice(&i2cBus, MOCK_DEVICE_ADDR);

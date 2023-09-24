@@ -13,6 +13,6 @@ class MOCKDEVICE : public I2CDevice {
         int begin();
         uint8_t read_value();
         int write_value(uint8_t val);
-}
+};
 
 #endif
