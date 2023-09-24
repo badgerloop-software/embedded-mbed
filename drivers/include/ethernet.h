@@ -17,13 +17,15 @@ class EthernetServer{
         EthernetServer(const char *this_ip, const char* client_ip, void (*data_recv)(void *data, int size), void (*data_write)(int *size));
         void init(const char *this_ip, const char* client_ip, void (*data_recv)(void *data, int size), void (*data_write)(int *size));
         void run(void);
-        char ip[32];
-        char client_ip[32];
+        char ip[48];
+        char client_ip[48];
         void (*data_recv)(void *data, int size);
         void (*data_write)(int *size);
     private:
         void read_thread(void);
         void write_thread(void);
+        char sbuffer[512];
+        char rbuffer[512];
 };
 
 #endif /*ETHERNET_H*/

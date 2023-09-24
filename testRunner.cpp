@@ -13,7 +13,7 @@
 #define PORT            4005
  
 DigitalOut led(LED1);
- 
+
 NetworkInterface *net = NetworkInterface::get_default_instance();
 TCPSocket client;
 SocketAddress clientAddress;
