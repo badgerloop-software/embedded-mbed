@@ -30,6 +30,13 @@ void EthernetServer::init(const char *this_ip, int port,
 }
 
 int8_t EthernetServer::run(void){
+    Thread read;
+    read.start(this->read_thread);
+    Thread write;
+
+}
+
+void EthernetServer::write_thread(void){
     puts("Starting ethernet communication driver");
     puts("Initializing Network Interface");
     this->net = EthernetInterface::get_default_instance();
@@ -44,9 +51,7 @@ int8_t EthernetServer::run(void){
     puts("Listening on socket...");
     this->server.listen();
     
-    while(1){
-        
-    }
+    while(1);//spinlock
 
     return 0;
 }
