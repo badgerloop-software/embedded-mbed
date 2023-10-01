@@ -17,6 +17,8 @@ int I2CDevice::readI2CWrapper(uint8_t reg, char buffer[], int numBytes) {
     if (this->i2cBus->write(this->addr, writeBuffer, 1) != 0) {
         return 1; 
     }
+    //printf("(I2CDEVICE::readI2CWrapper wait between write and read)\n");
+    wait_us(100000); //wait 0.1s
     // the read() function sets bit 0 of addr to 1 for a read 
     if (this->i2cBus->read(this->addr, buffer, numBytes) != 0) {
         return 1; 
@@ -32,9 +34,10 @@ int I2CDevice::readI2CWrapper(uint8_t reg, char buffer[], int numBytes) {
  */
 int I2CDevice::writeI2CWrapper(uint8_t reg, char data[], int numBytes) {
     // create a new buffer which is just the input buffer with the register offset prepended.
-    char newBuffer[numBytes + 1];
+    char newBuffer[10]; // used to be numBytes + 1
     newBuffer[0] = reg;
     memcpy(newBuffer+1, data, numBytes);
+    //printf("writeI2CWrapper values:\nreg: %d\ndata: %d\n", newBuffer[0], newBuffer[1]);
     // check if the I2C write throws an error 
     if(this->i2cBus->write(this->addr, newBuffer, numBytes + 1)) {
         return 1;
