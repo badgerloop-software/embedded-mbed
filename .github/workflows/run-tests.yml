@@ -122,10 +122,12 @@ jobs:
          sleep 5
          jobs -l
          echo "btf_pid=$!" >> "$GITHUB_OUTPUT"
-         #     - name: Run Tests
-         # TODO       working-directory: ${{ env.embedded-mbed-dir }}
-         #       if: steps.start-btf.outcome == 'success'
-         #       run: |
+         deactivate # TODO Put this in a condition
+
+     - name: Run Tests
+# TODO       working-directory: ${{ env.embedded-mbed-dir }}
+       if: steps.start-btf.outcome == 'success'
+       run: |
          # TODO Split up compile and flash so that BTF can be brought to foreground immediately after flashing
          #
          # TODO cp cmake_build/${{ needs.setup.outputs.target }}/${{ env.BUILD_PROFILE }}/${{ env.TOOLCHAIN }}/embedded-mbed.bin ${{ needs.setup.outputs.flash_mntpt }}
@@ -135,10 +137,14 @@ jobs:
          # TODO If deactivation is necessary, do the same thing with the previous step, but only run the deactivate step if the previous step failed
          echo "BTF PID: ${{ steps.start-btf.outputs.btf_pid }}" # TODO
          jobs -l
+         source ${{ env.venv_path }}/bin/activate
+         fg 1
+         deactivate
          echo "Successfully flashed to ${{ needs.setup.outputs.target }} :v:" >> $GITHUB_STEP_SUMMARY
-         #     - name: Deactivate Virtual Environment If Needed
-         #       if: always()
-         #       run: |
+
+     - name: Deactivate Virtual Environment If Needed
+       if: always()
+       run: |
          echo "$VIRTUAL_ENV"
          jobs -l
          deactivate # TODO Put this in a condition
