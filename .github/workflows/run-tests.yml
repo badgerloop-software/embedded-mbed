@@ -100,52 +100,26 @@ jobs:
       - self-hosted
 
     steps:
-     - name: Compile embedded-mbed
+     - name: Compile and Flash
        env:
          BUILD_PROFILE: develop
          TOOLCHAIN: GCC_ARM
        working-directory: ${{ env.embedded-mbed-dir }}
        run: |
-         echo "Compile now" # TODO
-         # TODO mbed-tools configure -t ${{ env.TOOLCHAIN }} -m ${{ needs.setup.outputs.target }}
-         # TODO cmake -S . -B cmake_build/${{ needs.setup.outputs.target }}/${{ env.BUILD_PROFILE }}/${{ env.TOOLCHAIN }} -GNinja
-         # TODO cmake --build cmake_build/${{ needs.setup.outputs.target }}/${{ env.BUILD_PROFILE }}/${{ env.TOOLCHAIN }}
+         mbed-tools configure -t ${{ env.TOOLCHAIN }} -m ${{ needs.setup.outputs.target }}
+         cmake -S . -B cmake_build/${{ needs.setup.outputs.target }}/${{ env.BUILD_PROFILE }}/${{ env.TOOLCHAIN }} -GNinja
+         cmake --build cmake_build/${{ needs.setup.outputs.target }}/${{ env.BUILD_PROFILE }}/${{ env.TOOLCHAIN }}
+         cp cmake_build/${{ needs.setup.outputs.target }}/${{ env.BUILD_PROFILE }}/${{ env.TOOLCHAIN }}/embedded-mbed.bin ${{ needs.setup.outputs.flash_mntpt }}
+         echo "Successfully flashed to ${{ needs.setup.outputs.target }} :v:" >> $GITHUB_STEP_SUMMARY
 
-     - name: Setup Virtual Environment and Start BTF
-       id: start-btf
+     - name: Run Tests
        continue-on-error: true
        working-directory: ${{ env.btf-dir }}
        run: |
          source setup.sh ${{ env.venv_path }}
-         python3 testRunner.py ${{ github.workspace }}/${{ env.embedded-mbed-dir }}/tests.yml ${{ github.workspace }}/${{ env.embedded-mbed-dir }}/setup.yml &
-         echo "$!"
-         sleep 5
-         jobs -l
-         echo "btf_pid=$!" >> "$GITHUB_OUTPUT"
-         deactivate # TODO Put this in a condition
-
-     - name: Run Tests
-# TODO       working-directory: ${{ env.embedded-mbed-dir }}
-       if: steps.start-btf.outcome == 'success'
-       run: |
-         # TODO Split up compile and flash so that BTF can be brought to foreground immediately after flashing
-         #
-         # TODO cp cmake_build/${{ needs.setup.outputs.target }}/${{ env.BUILD_PROFILE }}/${{ env.TOOLCHAIN }}/embedded-mbed.bin ${{ needs.setup.outputs.flash_mntpt }}
-         #
-         # TODO Bring BTF to the foreground
-         # TODO deactivate venv (???) (If doing this, use 'continu-on-error: true' for this step and create a Deactivate step to deactivate the venv
-         # TODO If deactivation is necessary, do the same thing with the previous step, but only run the deactivate step if the previous step failed
-         echo "BTF PID: ${{ steps.start-btf.outputs.btf_pid }}" # TODO
-         jobs -l
-         source ${{ env.venv_path }}/bin/activate
-         fg 1
+         python3 testRunner.py ${{ github.workspace }}/${{ env.embedded-mbed-dir }}/tests.yml ${{ github.workspace }}/${{ env.embedded-mbed-dir }}/setup.yml
          deactivate
-         echo "Successfully flashed to ${{ needs.setup.outputs.target }} :v:" >> $GITHUB_STEP_SUMMARY
+         cat ${{ needs.setup.outputs.ser_port }} # TODO Remove
 
-     - name: Deactivate Virtual Environment If Needed
-       if: always()
-       run: |
-         echo "$VIRTUAL_ENV"
-         jobs -l
-         deactivate # TODO Put this in a condition
-         rm -rf ${{ env.venv_path }}
+     - name: Clean Virtual Environment
+       run: rm -rf ${{ env.venv_path }}
