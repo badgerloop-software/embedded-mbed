@@ -117,11 +117,8 @@ jobs:
        working-directory: ${{ env.btf-dir }}
        run: |
          source setup.sh ${{ env.venv_path }}
-         python3 testRunner.py ${{ github.workspace }}/${{ env.embedded-mbed-dir }}/tests.yml ${{ github.workspace }}/${{ env.embedded-mbed-dir }}/setup.yml
-         # TODO Output test results from BTF to a markdown formatted table
+         python3 testRunner.py ${{ github.workspace }}/${{ env.embedded-mbed-dir }}/tests.yml ${{ github.workspace }}/${{ env.embedded-mbed-dir }}/setup.yml >> $GITHUB_STEP_SUMMARY
          deactivate
-         echo "----------------------" # TODO Remove
-         cat ${{ needs.setup.outputs.ser_port }} # TODO Remove
 
      - name: Clean Virtual Environment
        run: rm -rf ${{ env.venv_path }}
