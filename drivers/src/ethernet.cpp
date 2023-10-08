@@ -4,6 +4,7 @@
 #include "Socket.h"
 #include "TCPSocket.h"
 #include "nsapi_types.h"
+#include <cstdio>
 
 /**
  * Initializes an EthernetServer
@@ -19,6 +20,7 @@ EthernetServer::EthernetServer(const char *this_ip, int port,
 
 void EthernetServer::init(const char *this_ip, int port,
  void (*data_recv)(void *, int), void (*data_write)(int *, void**)){
+    puts("init");
     // Copy ip
     memmove(this->ip, this_ip, strlen(this_ip)+1);
     // Callback for when data is received
@@ -30,50 +32,63 @@ void EthernetServer::init(const char *this_ip, int port,
 }
 
 int8_t EthernetServer::run(void){
+    puts("Run");
     // Thread read;
     // read.start(callback(this, &EthernetServer::read_thread));
-    Thread write;
-    write.start(callback(this, &EthernetServer::write_thread));
+    Thread *write = new Thread();
+    write->start(callback(this, &EthernetServer::write_thread));
+    //puts("Done");
     return 0;
 }
 
 void EthernetServer::write_thread(void){
     puts("WT: Starting ethernet communication driver");
+    fflush(stdout);
     puts("WT: Initializing Network Interface");
     this->net = EthernetInterface::get_default_instance();
     puts("WT: Generating server address");
     this->server_address = new SocketAddress(this->ip, this->port);
     puts("WT: Opening socket on Ethernet Interface...");
-    this->server.open(net);
+    if(NSAPI_ERROR_OK != this->server.open(net)){
+        puts("BAD OPEN");
+    }
     puts("WT: Binding socket to generated address...");
     this->server.bind(*(this->server_address));
     puts("WT: Configure as non blocking...");
     this->server.set_blocking(false);
     puts("WT: Listening on socket...");
-    this->server.listen();
+    if(this->server.listen()==NSAPI_ERROR_NO_SOCKET){
+        puts("BAD SOCKET CONFIG");
+    }
+    //this->server.set_timeout(INT_MAX);
     
     int size;
     void *data;
     TCPSocket *new_connection;
     nsapi_error_t a;
-    Thread read;
+    Thread *read;
 
     // Wait for initial connection
     puts("WT: Write thread initialized.");
     puts("WT: Waiting for initial connection");
     while(1){
         new_connection = this->server.accept(&a);
-        if(a != NSAPI_ERROR_WOULD_BLOCK){
+        if(a == NSAPI_ERROR_OK){
             // Connection incoming!
             puts("WT: Connection incoming (initial)");
             this->client_socket = new_connection;
             this->client_socket->set_timeout(CONNECTION_TIMEOUT_US);
-            read.start(callback(this, &EthernetServer::read_thread));
+            read->start(callback(this, &EthernetServer::read_thread));
             puts("WT: Started read thread");
             break;
+        }else{
+            if(a == NSAPI_ERROR_NO_SOCKET){
+                puts("no socket");
+            }
         }
         // Otherwise wait for the heartbeat delay
         wait_us(CONNECTION_DELAY_US);
+        putc('.', stdout);
     }
 
     
@@ -105,12 +120,12 @@ void EthernetServer::write_thread(void){
 
             // Check for any incoming connections
             new_connection = this->server.accept(&a);
-            if(a != NSAPI_ERROR_WOULD_BLOCK){
+            if(a == NSAPI_ERROR_OK){
                 // Incoming connection
                 puts("WT: Incoming connection");
                 puts("WT: Killing read thread");
                 this->kill = 1;
-                read.join();
+                read->join();
                 puts("WT: Read thread exited, resetting kill flag");
                 this->kill = 0;
                 puts("WT: Destroying old socket");
@@ -119,23 +134,27 @@ void EthernetServer::write_thread(void){
                 this->client_socket = new_connection;
                 this->client_socket->set_timeout(CONNECTION_TIMEOUT_US);
                 puts("WT: Starting new read thread");
-                read.start(callback(this, &EthernetServer::read_thread));
+                delete read;
+                read = new Thread();
+                read->start(callback(this, &EthernetServer::read_thread));
             }
 
             if(this->kill){
                 puts("WT: Seen kill signal read thread!");
-                read.join();
+                read->join();
                 // Clean up old socket
                 this->client_socket->close();
                 puts("WT: Connection destroyed");
                 while(1){
                     new_connection = this->server.accept(&a);
-                    if(a != NSAPI_ERROR_WOULD_BLOCK){
+                    if(a == NSAPI_ERROR_OK){
                         // Connection incoming!
                         puts("WT: Connection incoming (reconnect?)");
                         this->client_socket = new_connection;
                         this->client_socket->set_timeout(CONNECTION_TIMEOUT_US);
-                        read.start(callback(this, &EthernetServer::read_thread));
+                        delete read;
+                        read = new Thread();
+                        read->start(callback(this, &EthernetServer::read_thread));
                         puts("WT: Restarted read thread");
                         break;
                     }

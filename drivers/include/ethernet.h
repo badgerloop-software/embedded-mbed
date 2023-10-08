@@ -24,7 +24,7 @@ Server implementation on Nucleo for communication with the pi
 #define GATEWAY     "0.0.0.0"
 
 #define HEARTBEAT_DELAY_US 50000 // 20 times per second
-#define CONNECTION_DELAY_US 1000000 // 1 time per second
+#define CONNECTION_DELAY_US 2000000 // 1 time per second
 #define CONNECTION_TIMEOUT_US 1000000 // 1 second
 
 // struct enet_err_t{
@@ -54,7 +54,7 @@ class EthernetServer{
         TCPSocket *client_socket;
         SocketAddress client_address;
 
-        bool kill; // Set this to 1 to kill the threads manually.
+        volatile bool kill = 0; // Set this to 1 to kill the threads manually.
 
         
 
