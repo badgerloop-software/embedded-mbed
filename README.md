@@ -1,5 +1,27 @@
 # embedded-mbed
 Firmware repository for mbed-based driver and device code.
+<!-- TODO Table of contents -->
+
+
+## Creating a Test
+<!-- TODO Fill this in or wait until implementing a new test interface for others to implement -->
+
+## Usage
+This project can be compiled and optionally flashed using the following `make` targets:
+
+Compile the project:
+```
+make compile [OPTIONS]
+```
+
+Compile and flash the project:
+```
+make flash MOUNTPOINT=</path/to/flash/mountpoint/> [OPTIONS]
+```
+With the following available `OPTIONS` (see the corresponding linked Arm Mbed OS documentation for more information):
+- [`PROFILE`](https://os.mbed.com/docs/mbed-os/v6.16/program-setup/build-profiles-and-rules.html): `develop` (default), `debug`, or `release`
+- [`TOOLCHAIN`](https://os.mbed.com/docs/mbed-os/v6.16/build-tools/index.html): `GCC_ARM` (default) or `GCC`
+- <!-- TODO -->
 
 ## Configuration File Structures
 
