@@ -7,6 +7,21 @@ execute_process(COMMAND ./parseConfigs.py
 set(MBED_PATH ${CMAKE_CURRENT_SOURCE_DIR}/mbed-os CACHE INTERNAL "")
 set(MBED_CONFIG_PATH ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
 set(APP_TARGET embedded-mbed)
+set(TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+set(HELPERS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/helpers)
+set(TEST_SOURCES
+    ${TESTS_DIR}/serialTest.cpp
+)
+set(TEST_HEADERS
+    ${TESTS_DIR}/test.h
+)
+set(HELPER_SOURCES
+    ${HELPERS_DIR}/serialWrapper.cpp
+)
+set(HELPER_HEADERS
+    ${HELPERS_DIR}/serialWrapper.h
+)
+
 
 include(${MBED_PATH}/tools/cmake/app.cmake)
 
@@ -14,12 +29,24 @@ project(${APP_TARGET})
 
 add_subdirectory(${MBED_PATH})
 
-add_executable(${APP_TARGET} testRunner.cpp)
+add_executable(${APP_TARGET}
+    testRunner.cpp
+    ${TEST_SOURCES}
+    ${TEST_HEADERS}
+    ${HELPER_SOURCES}
+    ${HELPER_HEADERS}
+)
 
 # Precompile the definitions header. The generated header will be force included in all source files, so they don't need `#include "definitions.h"`
 target_precompile_headers(${APP_TARGET}
     PRIVATE
         definitions.h
+)
+
+target_include_directories(${APP_TARGET}
+    PRIVATE
+        ${TESTS_DIR}
+        ${HELPERS_DIR}
 )
 
 target_sources(${APP_TARGET}
