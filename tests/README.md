@@ -28,7 +28,7 @@ class CustomTest : public Test {
         /**
          * OPTIONAL: Test setup. If not defined, there is no setup
          *
-         * NOTE: This is called before BTF test setup and execution
+         * NOTE: This is called after BTF test setup and execution
          */
         void setup() {
             // Add custom setup here
@@ -50,7 +50,7 @@ class CustomTest : public Test {
         /**
          * OPTIONAL: Test teardown. If not defined, there is no teardown
          *
-         * NOTE: This is called after BTF test conclusion TODO REVIEW and teardown REVIEW TODO
+         * NOTE: This is called after BTF test conclusion and teardown
          */
         void teardown() {
             // Add custom teardown here

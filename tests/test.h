@@ -10,6 +10,19 @@ using namespace std;
 
 // Serial interface for BTF communication
 extern SerialWrapper pc;
+// Test result codes
+enum resultCode {
+    TEST_PASS    = 0,    // Test passed
+    TEST_FAIL    = 1,    // Test failed
+    TEST_NOEXIST = 2,    // Test does not exist on the BTF
+    SERIAL_ERROR = 3,    // Serial communication error
+    RESULT_UNDEF = 4     // Unknown result
+};
+// Test result information
+typedef struct result {
+    bool pass;           // Pass/Fail
+    resultCode code;     // Detailed result code
+};
 
 
 class Test {
@@ -19,21 +32,21 @@ class Test {
         }
 
         // Execute the test, including any setup and teardown
-        bool execute() {
-            bool ret;
-            setup();
-            if(signalStart()) {
-                ret = runTest();
-                // Even if the test passed, modify the return value to indicate serial
-                // communication status. This is particularly useful in verifying the
-                // success of the initial serial test
-                ret = signalEnd(ret);
-            } else {
-                ret = false;
+        result execute() {
+            result res = {false, RESULT_UNDEF};
+            // Signal to BTF to start test (includes BTF test setup)
+            if(signalStart(&res.code)) {
+                // Run our test setup after the BTF
+                setup();
+                // Run test
+                res.pass = runTest();
+                // Signal to BTF to end test (includes BTF test teardown)
+                signalEnd(&res);
+                // Run our teardown after the BTF
+                teardown();
             }
-            teardown();
 
-            return ret;
+            return res;
         }
     protected:
         // Name of the test, as defined in tests.yml
@@ -47,7 +60,9 @@ class Test {
         virtual void teardown() {};
 
         // Signal to the BTF test runner to start the test
-        bool signalStart() {
+        // Returns bool indicating if test was started successfully
+        //     - If test start fails, set code to appropriate resultCode
+        bool signalStart(resultCode *code) {
             char buff[7];
 
             // Send start message to BTF test runner
@@ -56,22 +71,43 @@ class Test {
             // Read response from BTF test runner
             size_t nread = pc.readLine(buff, sizeof(buff));
 
+            // Set result code
+            if(nread <= 0) {
+                // Error reading from serial
+                *code = SERIAL_ERROR;
+                return false;
+            } else if(strcmp(buff, "DNE") == 0) {
+                // Test does not exist on the BTF
+                *code = TEST_NOEXIST;
+                return false;
+            }
+
             // The response should be "READY"
-            return (nread == 5) && (strcmp(buff, "READY") == 0);
+            return strcmp(buff, "READY") == 0;
         }
 
         // Signal to the BTF test runner to end the test
-        bool signalEnd(bool result) {
+        // If test end fails, set r's result code to appropriate resultCode
+        void signalEnd(result *r) {
             char buff[6];
 
             // Send end message to BTF test runner
-            printf("%s\n", result ? "PASS" : "FAIL");
+            printf("%s\n", r->pass ? "PASS" : "FAIL");
 
             // Read response from BTF test runner
             size_t nread = pc.readLine(buff, sizeof(buff));
 
-            // The response should be 'DONE'. If so, preserve the test result
-            return result && (nread == 4) && (strcmp(buff, "DONE") == 0);
+            // Set result code
+            if(nread <= 0) {
+                // Error reading from serial
+                r->code = SERIAL_ERROR;
+            } else if(strcmp(buff, "DONE") == 0) {
+                // Ended test successfully
+                r->code = r->pass ? TEST_PASS : TEST_FAIL;
+            } else {
+                // Unknown result
+                r->code = RESULT_UNDEF;
+            }
         }
 };
 

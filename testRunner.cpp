@@ -10,9 +10,12 @@ SerialWrapper pc;
 
 int main()
 {
+    // Test result
+    result res;
+
     // Verify BTF communication before running other tests
     SerialTest serialTest = SerialTest();
-    if(serialTest.execute()) {
+    if((res = serialTest.execute()).pass) {
         // Run tests
     }
 
