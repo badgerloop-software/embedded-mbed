@@ -1,9 +1,9 @@
 #include "mbed.h"
 
-
 int main()
 {
-    while (1) {
+    while (true)
+    {
         wait_us(1000000);
     }
 }
