@@ -69,7 +69,9 @@ class Test {
             printf("START TEST %s\n", testName.c_str());
 
             // Read response from BTF test runner
-            size_t nread = pc.readLine(buff, sizeof(buff));
+            // Give it a generouss 30 seconds to ensure timeout
+            // is not an issue during normal operation
+            size_t nread = pc.readLine(buff, sizeof(buff), 30000);
 
             // Set result code
             if(nread <= 0) {
@@ -95,7 +97,9 @@ class Test {
             printf("%s\n", r->pass ? "PASS" : "FAIL");
 
             // Read response from BTF test runner
-            size_t nread = pc.readLine(buff, sizeof(buff));
+            // Give it a generouss 30 seconds to ensure timeout
+            // is not an issue during normal operation
+            size_t nread = pc.readLine(buff, sizeof(buff), 30000);
 
             // Set result code
             if(nread <= 0) {
