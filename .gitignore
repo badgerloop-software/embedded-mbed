@@ -3,3 +3,4 @@
 BUILD
 cmake_build
 mbed-os
+definitions.h

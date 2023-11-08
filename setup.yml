@@ -1,0 +1,4 @@
+setup:
+  target: NUCLEO_F767ZI
+  devices:
+  drivers:
