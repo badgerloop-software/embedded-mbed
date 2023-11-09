@@ -3,8 +3,10 @@
 
 #include "mbed.h"
 #include "platform/SharedPtr.h"
+#include <chrono>
 
-#define DEFAULT_CAN_FREQ 250000 // Match Elcon charger
+#define DEFAULT_CAN_FREQ 250000     // Match Elcon charger
+#define ERR_CHECK_INTERVAL 5000ms   // How quickly to check bus errors in ms
 
 
 /*
@@ -53,11 +55,15 @@ class CANManager {
     private:
         EventQueue messageQueue;    // Schedule reading messages
         CAN canBus;                 // Bus the class manages
+        Ticker errorClearer;        // Periodically clears error and ensures bus is working
 
         // Interrupt handler to queue a readMessage (cannot do actual read in IRQ context)
         void queueRead();
         // Takes CAN message out of buffer and queues handling of messages
         void readMessage();
+
+        // Interrupt handler to queue an errorHandler 
+        void queueError();
         // Prints out number of errors and resets bus on error interrupt
         void errorHandler();
 
@@ -66,7 +72,7 @@ class CANManager {
         // rd: CAN rd pin of the Nucleo to use
         // td: CAN td pin of the Nucleo to use
         // frequency: Baud rate of can bus
-        CANManager(PinName rd, PinName td, int frequency = DEFAULT_CAN_FREQ);
+        CANManager(PinName rd, PinName td, int frequency = DEFAULT_CAN_FREQ, std::chrono::milliseconds errorCheckPeriod = ERR_CHECK_INTERVAL);
 
         // Destructor stopping manager and freeing resources
         ~CANManager();
@@ -79,7 +85,7 @@ class CANManager {
         // messageID: CAN ID to use to identify the signal
         // data: Payload
         // length: Size of data in bytes
-        void sendMessage(int messageID, SharedPtr<unsigned char> data, int length);
+        int sendMessage(int messageID, void* data, int length, std::chrono::milliseconds timeout = 10ms);
 
         // Wrapper for Mbed CAN filter
         void filter(unsigned int id, unsigned int mask, CANFormat format=CANAny, int handle=0);
@@ -88,7 +94,7 @@ class CANManager {
         void frequency(int hz);
 
         // Processes queued reads to be handled for up to specified time
-        void doRead(std::chrono::milliseconds duration);
+        void runQueue(std::chrono::milliseconds duration);
 };
 
 
