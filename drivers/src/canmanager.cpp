@@ -26,14 +26,26 @@ void CANManager::readMessage() {
 
 
 /*
+    Queues handling of error
+*/
+void CANManager::queueError() {
+    this->messageQueue.call(callback(this, &CANManager::errorHandler));
+}
+
+
+/*
     Logs error and resets bus in case of fault
 */
 void CANManager::errorHandler() {
     int numberTdErrors = this->canBus.tderror();
     int numberRdErrors = this->canBus.rderror();
 
-    printf("Cleared %i transmit errors and %i read errors\n", numberTdErrors, numberRdErrors);
-    canBus.reset();
+    if (numberRdErrors || numberTdErrors) {
+        printf("Cleared %i transmit errors and %i read errors\n", numberTdErrors, numberRdErrors);
+        canBus.reset();
+        // Need to reattach all CAN bus interrupt handlers after reset
+        this->canBus.attach(callback(this, &CANManager::queueRead), CAN::RxIrq);
+    }
 }
 
 
@@ -43,14 +55,11 @@ void CANManager::errorHandler() {
     - Create EventQueue
     - Attach all interrupt handlers
 */
-CANManager::CANManager(PinName rd, PinName td, int frequency) : canBus(rd, td, frequency), messageQueue() {
+CANManager::CANManager(PinName rd, PinName td, int frequency, std::chrono::milliseconds errorCheckPeriod) : canBus(rd, td, frequency), messageQueue() {
     // Set up function to read on interrupt
-    using IrqType = mbed::interface::can::IrqType;
-    this->canBus.attach(callback(this, &CANManager::queueRead), IrqType::RxIrq);
-
-    // Set up error clearing on interrupt
-    this->canBus.attach(callback(this, &CANManager::errorHandler), IrqType::BeIrq);
-    this->canBus.attach(callback(this, &CANManager::errorHandler), IrqType::EpIrq);
+    this->canBus.attach(callback(this, &CANManager::queueRead), CAN::RxIrq);
+    // Set up function to periodically clear errors
+    this->errorClearer.attach(callback(this, &CANManager::queueError), errorCheckPeriod);
 }
 
 
@@ -63,27 +72,32 @@ CANManager::CANManager(PinName rd, PinName td, int frequency) : canBus(rd, td, f
 */
 CANManager::~CANManager() {    
     // Clear interrupt handlers
-    using IrqType = mbed::interface::can::IrqType;
-    this->canBus.attach(0, IrqType::RxIrq);
-    this->canBus.attach(0, IrqType::BeIrq);
-    this->canBus.attach(0, IrqType::EpIrq);
-
+    this->canBus.attach(0, CAN::RxIrq);
     this->messageQueue.dispatch_once();
 }
 
 
 /*
     Sends a message with the specified data in the CAN bus
+    Will retry until specified timeout
 */
-void CANManager::sendMessage(int messageID, SharedPtr<unsigned char> data, int length) {
-    this->canBus.write(CANMessage(messageID, data.get(), length));
+int CANManager::sendMessage(int messageID, void* data, int length, std::chrono::milliseconds timeout) {
+    Timer t;
+    t.start();
+    int returnCode = 0;
+    // Retry while failing to send and less than timeout
+    while (!(returnCode = this->canBus.write(CANMessage(messageID, (char*)data, length))) && t.elapsed_time() < timeout) {
+        this->runQueue(1ms);
+    }
+    t.stop();
+    return returnCode;
 }
 
 
 /*
     Runs queued events for the specified time duration
 */
-void CANManager::doRead(std::chrono::milliseconds duration) {
+void CANManager::runQueue(std::chrono::milliseconds duration) {
     this->messageQueue.dispatch_for(duration);
 }
 
