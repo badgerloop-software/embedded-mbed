@@ -45,6 +45,18 @@ https://www.st.com/en/microcontrollers-microprocessors/stm32f303k8.html
 INA Datasheet: https://www.ti.com/lit/ds/symlink/ina219.pdf?ts=1695109047714&ref_url=https%253A%252F%252Fwww.ti.com%252Fproduct%252FINA219%252Fpart-details%252FINA219AIDCNR
 
 
+
+
 # Things to think about
 
 DMA? to save power? I2C works with DMA controller on STM32
+
+# TO Do
+Read and write functions for all the registers that are applicable
+Add math conversion stuff to read registers (is it appilcable for all read registers)
+Constructor add super for i2cdevice class
+
+Testing
+Exhaustive test for all registers read and write and make sure values make sense.
+
+

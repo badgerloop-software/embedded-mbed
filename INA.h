@@ -81,119 +81,32 @@ class INADriver : public I2CDevice{
 
     //Constructor
     // Takes in the I2C bus pointer as well as the subordinate address. Shunt resistor is used for calulations
-    INADriver(I2C* p_i2cBus, uint8_t p_subordinate_address, uint8_t p_shunt_resistor) : I2CDevice(p_i2cBus, p_subordinate_address) {
-        shunt_resistor = p_shunt_resistor;
-
-        //Test write call
-        char buffer[2];
-        readI2CWrapper(0x00, buffer, 2);
-        if ( buffer[0] != DEFAULT__CONFIG_STATE_LOW && buffer[1] != DEFAULT__CONFIG_STATE_HIGH) {
-            error_code = I2C_BUS_ERROR;
-        }
-    }
+    INADriver(I2C* p_i2cBus, uint8_t p_subordinate_address, uint8_t p_shunt_resistor);
 
     //GENERAL R/W Registers
-    int readRegisterINA(INARegister p_reg, char p_buffer[], int p_numBytes) {
-        if(I2C_BUS_ERROR) {
-            return 1;
-        }
-        I2CDevice::readI2CWrapper(p_reg, p_buffer, p_numBytes);
-        return 0;
-    }
-    int writeRegisterINA(INARegister p_reg, char p_buffer[], int p_numBytes) {
-        if(I2C_BUS_ERROR) {
-            return 1;
-        }
-        I2CDevice::writeI2CWrapper(p_reg, p_buffer, p_numBytes);
-        return 0;
-    }
+    int readRegisterINA(INARegister p_reg, char p_buffer[], int p_numBytes);
+    int writeRegisterINA(INARegister p_reg, char p_buffer[], int p_numBytes);
 
     //Individual R/W Registers
-    int readConfigRegister(char p_data[], int p_numBytes) {
-        if(I2C_BUS_ERROR) {
-            return 1;
-        }
-        I2CDevice::readI2CWrapper(INADriver::CONFIG, p_data, p_numBytes);
-        return 0;
-    }
-    int writeConfigRegister(char p_data[], int p_numBytes) {
-        if(I2C_BUS_ERROR) {
-            return 1;
-        }
-        I2CDevice::writeI2CWrapper(INADriver::CONFIG, p_data, p_numBytes);
-        return 0;
-    }
+    int readConfigRegister(char p_data[], int p_numBytes);
+    int writeConfigRegister(char p_data[], int p_numBytes);
 
-    int readCalibrationRegister(char p_data[], int p_numBytes) {
-        if(I2C_BUS_ERROR) {
-            return 1;
-        }
-        I2CDevice::readI2CWrapper(INADriver::CALIBRATE, p_data, p_numBytes);
-        return 0;
-    }
-    int writeCalibrationRegister(char p_data[], int p_numBytes) {
-        if(I2C_BUS_ERROR) {
-            return 1;
-        }
-        I2CDevice::writeI2CWrapper(INADriver::CALIBRATE, p_data, p_numBytes);
-        return 0;
-    }
+    int readCalibrationRegister(char p_data[], int p_numBytes);
+    int writeCalibrationRegister(char p_data[], int p_numBytes);
 
-    int readShuntVoltageRegister(char p_data[], int p_numBytes) {
-        if(I2C_BUS_ERROR) {
-            return 1;
-        }
-        I2CDevice::readI2CWrapper(INADriver::SHUNTVOLTAGE, p_data, p_numBytes);
-        return 0;
-    }
+    int readShuntVoltageRegister(char p_data[], int p_numBytes);
 
-    int readBusVoltageRegister(char p_data[], int p_numBytes)  {
-        if(I2C_BUS_ERROR) {
-            return 1;
-        }
-        I2CDevice::readI2CWrapper(INADriver::BUSVOLTAGE, p_data, p_numBytes);
-        return 0;
-    }
+    int readBusVoltageRegister(char p_data[], int p_numBytes);
 
-    int readPowerRegister(char p_data[], int p_numBytes)   {
-        if(I2C_BUS_ERROR) {
-            return 1;
-        }
-        I2CDevice::readI2CWrapper(INADriver::POWER, p_data, p_numBytes);
-        return 0;
-    }
+    int readPowerRegister(char p_data[], int p_numBytes);
 
-    int readCurrentRegister(char p_data[], int p_numBytes) {
-        if(I2C_BUS_ERROR) {
-            return 1;
-        }
-        I2CDevice::readI2CWrapper(INADriver::CURRENT, p_data, p_numBytes);
-        return 0;
-    }
+    int readCurrentRegister(char p_data[], int p_numBytes);
 
-    double conversionMath(uint16_t raw_data) {
-        //Using defualt PGA of /8
-        if((raw_data & 0x8000) == 0x1) {
-            //Positive Num
-            return ((double)raw_data) / 10.0;
-        }
-        else {
-            //Negative Num
-            uint16_t raw_data_2s_complement = ~raw_data + 1;
-            return ((double)raw_data) / 10.0;
-        }
-    }
+    double conversionMath(uint16_t raw_data);
 
     //Set bit 15 of reg 0x00 to reset
     //We only call this if we have a valid bus (a.k.a. constructor worked)
-    int resetINA() {
-        if(I2C_BUS_ERROR) {
-            return 1;
-        }
-        char buffer[1] = {0xFF};
-        writeI2CWrapper(0x00, buffer, 1);
-        return 0;
-    }
+    int resetINA();
     //Calulate Current from voltage I = V/R
     uint16_t calculateVoltage(uint16_t p_voltage) {
     // this is kinda sudo code. may need to change variable types
