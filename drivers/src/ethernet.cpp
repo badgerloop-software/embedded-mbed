@@ -47,8 +47,11 @@ void EthernetServer::write_thread(void){
     fflush(stdout);
     puts("WT: Initializing Network Interface");
     this->net = EthernetInterface::get_default_instance();
+    puts("Disconnecting open network");
     net->disconnect();
+    puts("Setting network parameters...");
     net->set_network((SocketAddress)this->ip, (SocketAddress)"255.255.255.0", (SocketAddress)"0.0.0.0");
+    puts("Connecting to network");
     net->connect();
     puts("WT: Generating server address");
     this->server_address = new SocketAddress(this->ip, this->port);
@@ -88,6 +91,11 @@ void EthernetServer::write_thread(void){
         }else{
             if(a == NSAPI_ERROR_NO_SOCKET){
                 puts("no socket");
+            }else{
+                puts("Trying to close connection");
+                //new_connection->close();
+                //puts("Done");
+                delete new_connection;
             }
             printf("%d\n", a);
         }

@@ -2,7 +2,10 @@
     "target_overrides": {
         "*": {
             "target.printf_lib": "std",
-            "target.c_lib": "small"
+            "target.c_lib": "small",
+            "lwip.socket-max": 5,
+"lwip.tcp-server-max": 3,
+"lwip.tcp-socket-max": 5
         }
     }
 }
