@@ -2,6 +2,7 @@
 #include "EthernetInterface.h"
 #include "NetworkInterface.h"
 #include "Socket.h"
+#include "SocketAddress.h"
 #include "TCPSocket.h"
 #include "nsapi_types.h"
 #include <cstdio>
@@ -46,6 +47,9 @@ void EthernetServer::write_thread(void){
     fflush(stdout);
     puts("WT: Initializing Network Interface");
     this->net = EthernetInterface::get_default_instance();
+    net->disconnect();
+    net->set_network((SocketAddress)this->ip, (SocketAddress)"255.255.255.0", (SocketAddress)"0.0.0.0");
+    net->connect();
     puts("WT: Generating server address");
     this->server_address = new SocketAddress(this->ip, this->port);
     puts("WT: Opening socket on Ethernet Interface...");
@@ -54,7 +58,7 @@ void EthernetServer::write_thread(void){
     }
     puts("WT: Binding socket to generated address...");
     this->server.bind(*(this->server_address));
-    puts("WT: Configure as non blocking...");
+    puts("WT: Configure as blocking...");
     this->server.set_blocking(false);
     puts("WT: Listening on socket...");
     if(this->server.listen()==NSAPI_ERROR_NO_SOCKET){
@@ -85,6 +89,7 @@ void EthernetServer::write_thread(void){
             if(a == NSAPI_ERROR_NO_SOCKET){
                 puts("no socket");
             }
+            printf("%d\n", a);
         }
         // Otherwise wait for the heartbeat delay
         wait_us(CONNECTION_DELAY_US);

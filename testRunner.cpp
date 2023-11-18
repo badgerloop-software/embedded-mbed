@@ -83,7 +83,7 @@
 int main(void){
     ;
     puts("===TEST CODE STARTING===");
-    EthernetServer es("192.168.0.16", 4005, NULL, NULL);
+    EthernetServer es("192.168.1.16", 4005, NULL, NULL);
     es.run();
     while(1){
         wait_us(10000000);
