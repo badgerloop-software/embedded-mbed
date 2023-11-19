@@ -81,9 +81,8 @@
 
 
 int main(void){
-    ;
     puts("===TEST CODE STARTING===");
-    EthernetServer es("192.168.1.16", 4005, NULL, NULL);
+    EthernetClient es("192.168.1.16", 4005, NULL, NULL);
     es.run();
     while(1){
         // Idle eternally and let the default data handlers do the work
