@@ -1,3 +1,5 @@
+#ifndef __MUTEXLESS_ANALOG_H__
+#define __MUTEXLESS_ANALOG_H__
 #include "mbed.h"
 
 /*
@@ -17,3 +19,5 @@ class AnalogOutMutexless : public AnalogOut {
         virtual void lock() { }
         virtual void unlock() { }
 };
+
+#endif
