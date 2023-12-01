@@ -81,7 +81,6 @@
 
 
 int main(void){
-    ;
     puts("===TEST CODE STARTING===");
     EthernetClient es("192.168.1.16", 4005, NULL, NULL);
     es.run();

@@ -44,6 +44,7 @@ int EthernetClient::connect(void){
         this->connected = 0;
         return -2;
     }
+    this->sock.set_timeout(HEARTBEAT_DELAY_US); // TODO change this?
     // Connected
     this->connected = 1;
     return 0;
