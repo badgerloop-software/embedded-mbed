@@ -109,7 +109,7 @@ restart:
             size = strlen((char*)data);
         }
         status = this->sock.send(data, size);
-        if(status == NSAPI_ERROR_TIMEOUT){
+        if(status != NSAPI_ERROR_OK){
             puts("[WT]: timeout, disconnect");
             this->connected = 0;
         }
