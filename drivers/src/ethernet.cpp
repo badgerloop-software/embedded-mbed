@@ -40,7 +40,7 @@ int EthernetClient::connect(void){
         this->connected = 0;
         return -1;
     }
-    this->sock.set_blocking(true);
+    //this->sock.set_blocking(true);
     if(this->sock.connect(*(this->server_address)) < 0){
         this->connected = 0;
         return -2;
