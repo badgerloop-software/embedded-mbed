@@ -4,6 +4,7 @@
 #include "Socket.h"
 #include "SocketAddress.h"
 #include "TCPSocket.h"
+#include "ns_socket.h"
 #include "nsapi_types.h"
 #include <cstdio>
 
@@ -92,6 +93,7 @@ restart:
             if(status < 0){
                 // Not connected
                 //wait_us(CONNECTION_DELAY_US);
+                printf("Socket connection failed! Status: %d\n", status);
                 continue;
             }
             // Connected
