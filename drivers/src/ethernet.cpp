@@ -31,6 +31,8 @@ int EthernetClient::connect(void){
     NetworkInterface *net = NetworkInterface::get_default_instance();
     net->disconnect();
     puts("Disconnected from any existing connections");
+    puts("Closing socket if already open");
+    this->sock.close();
     this->connected = 0;
     status = net->connect();
     printf("Status: %d\n", status);
