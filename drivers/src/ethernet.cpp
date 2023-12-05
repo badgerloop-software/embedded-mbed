@@ -6,7 +6,8 @@
 #include "TCPSocket.h"
 #include "ns_socket.h"
 #include "nsapi_types.h"
-#include <cstdio>
+#include <stdio.h>
+
 
 /**
  * Initializes an EthernetServer
@@ -46,7 +47,7 @@ int EthernetClient::connect(void){
         this->connected = 0;
         return -2;
     }
-    this->sock.set_timeout(HEARTBEAT_DELAY_US); // TODO change this?
+    this->sock.set_timeout(HEARTBEAT_DELAY_US/1000); // TODO change this?
     // Connected
     this->connected = 1;
     return 0;
