@@ -4,8 +4,11 @@
 #include "Socket.h"
 #include "SocketAddress.h"
 #include "TCPSocket.h"
+
 #include "nsapi_types.h"
 #include <cstdio>
+
+
 
 /**
  * Initializes an EthernetServer
@@ -28,7 +31,11 @@ int EthernetClient::connect(void){
     puts("Getting network interface");
     NetworkInterface *net = NetworkInterface::get_default_instance();
     net->disconnect();
-    puts("Disconnected");
+    puts("Disconnected from any existing connections");
+    puts("(not) Setting static IP");
+    //net->set_network((SocketAddress)IP,(SocketAddress)MASK,(SocketAddress)GATEWAY);
+    puts("Closing socket if already open");
+    this->sock.close();
     this->connected = 0;
     status = net->connect();
     printf("Status: %d\n", status);
@@ -36,16 +43,23 @@ int EthernetClient::connect(void){
     net->get_netmask(&mask);
     SocketAddress gateway;
     net->get_gateway(&gateway);
+    //net->set_network(((SocketAddress)"192.168.1.15"), mask, gateway);
+    SocketAddress tmp_ip; 
+    net->get_ip_address(&tmp_ip);
+    const char *p_ip = tmp_ip.get_ip_address();
+    printf("IP address: %s\n", p_ip ? p_ip : "None");
+    puts("Opening socket...");
     if(this->sock.open(net) != NSAPI_ERROR_OK){
         this->connected = 0;
         return -1;
     }
+    puts("Attempt: Connecting...");
     //this->sock.set_blocking(true);
     if(this->sock.connect(*(this->server_address)) < 0){
         this->connected = 0;
         return -2;
     }
-    this->sock.set_timeout(HEARTBEAT_DELAY_US); // TODO change this?
+    this->sock.set_timeout(HEARTBEAT_DELAY_US/1000); // TODO change this?
     // Connected
     this->connected = 1;
     return 0;
@@ -70,8 +84,8 @@ void EthernetClient::init(const char *server_ip, int port,
 
 int8_t EthernetClient::run(void){
     puts("Starting Ethernet Client");
-    Thread read;
-    read.start(callback(this, &EthernetClient::read_thread));
+    Thread *read = new Thread();
+    read->start(callback(this, &EthernetClient::read_thread));
     Thread *write = new Thread();
     write->start(callback(this, &EthernetClient::write_thread));
     puts("Finished run function");
@@ -80,24 +94,25 @@ int8_t EthernetClient::run(void){
 
 void EthernetClient::write_thread(void){
 restart:
-    puts("[WT]: starting");
+    //puts("[WT]: starting");
     int status;
-    puts("[WT]: entering mainloop");
+    //puts("[WT]: entering mainloop");
     int size;
     void *data;
     while(1){
-        puts("[WT]: Begin cycle");
+      //  puts("[WT]: Begin cycle");
         if(!this->connected){
             status = this->connect();
             if(status < 0){
                 // Not connected
                 //wait_us(CONNECTION_DELAY_US);
+                printf("Socket connection failed! Status: %d\n", status);
                 continue;
             }
             // Connected
             // Fall through to rest of routine
         }
-        puts("[WT]: getting data");
+        //puts("[WT]: getting data");
         size = 0;
         data = NULL;
         if(this->data_write){
@@ -110,8 +125,10 @@ restart:
             size = strlen((char*)data);
         }
         status = this->sock.send(data, size);
-        if(status != NSAPI_ERROR_OK){
+        if(status < 0){
             puts("[WT]: timeout, disconnect");
+            puts("Debug information:");
+            printf("NSAPI error code: %d\n", status);
             this->connected = 0;
         }
         wait_us(HEARTBEAT_DELAY_US);
@@ -134,14 +151,18 @@ void EthernetClient::read_thread(void){
     while(1){
         puts("[RT]: Begin cycle");
         if(!connected){
-            wait_us(CONNECTION_DELAY_US);
+            puts("no connection, stalling");
+            wait_us(1000000);// Use 1 second to reduce latency
             continue;
         }
         status = this->sock.recv(this->rbuffer, 2048);
-        if(status != NSAPI_ERROR_OK){
+        printf("Read returned status %d\n", status);
+        if(status <= NSAPI_ERROR_OK){
             // No data to find, or error
+            puts("Error");
             continue;
         }
+        recv_size = status;
         if(this->data_recv){
             puts("RT: Calling data_recv");
             this->data_recv((void*)this->rbuffer, recv_size);

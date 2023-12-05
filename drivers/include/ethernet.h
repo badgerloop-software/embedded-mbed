@@ -15,6 +15,10 @@ Server implementation on Nucleo for communication with the pi
 #include "limits.h"
 #include "stdbool.h"
 
+#define IP          "192.168.1.15"   //Here place your static IP of Mbed
+#define GATEWAY     "0.0.0.0"
+#define MASK        "255.255.255.0"
+
 #define NETMASK     "255.255.255.0"
 #define GATEWAY     "0.0.0.0"
 
