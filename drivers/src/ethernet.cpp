@@ -4,9 +4,9 @@
 #include "Socket.h"
 #include "SocketAddress.h"
 #include "TCPSocket.h"
-#include "ns_socket.h"
+
 #include "nsapi_types.h"
-#include <stdio.h>
+#include <cstdio>
 
 
 /**
