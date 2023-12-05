@@ -28,7 +28,7 @@ int EthernetClient::connect(void){
     puts("Getting network interface");
     NetworkInterface *net = NetworkInterface::get_default_instance();
     net->disconnect();
-    puts("Disconnected");
+    puts("Disconnected from any existing connections");
     this->connected = 0;
     status = net->connect();
     printf("Status: %d\n", status);
@@ -110,7 +110,7 @@ restart:
             size = strlen((char*)data);
         }
         status = this->sock.send(data, size);
-        if(status != NSAPI_ERROR_OK){
+        if(status < 0){
             puts("[WT]: timeout, disconnect");
             puts("Debug information:");
             printf("NSAPI error code: %d\n", status);
