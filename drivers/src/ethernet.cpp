@@ -112,6 +112,8 @@ restart:
         status = this->sock.send(data, size);
         if(status != NSAPI_ERROR_OK){
             puts("[WT]: timeout, disconnect");
+            puts("Debug information:");
+            printf("NSAPI error code: %d\n", status);
             this->connected = 0;
         }
         wait_us(HEARTBEAT_DELAY_US);
