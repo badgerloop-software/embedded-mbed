@@ -40,6 +40,7 @@ int EthernetClient::connect(void){
     net->get_netmask(&mask);
     SocketAddress gateway;
     net->get_gateway(&gateway);
+    net->set_network(((SocketAddress)"192.168.1.15"), mask, gateway);
     if(this->sock.open(net) != NSAPI_ERROR_OK){
         this->connected = 0;
         return -1;
