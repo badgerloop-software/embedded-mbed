@@ -84,7 +84,7 @@ void EthernetClient::init(const char *server_ip, int port,
 
 int8_t EthernetClient::run(void){
     puts("Starting Ethernet Client");
-    Thread read;
+    Thread *read = new Thread();
     read.start(callback(this, &EthernetClient::read_thread));
     Thread *write = new Thread();
     write->start(callback(this, &EthernetClient::write_thread));
