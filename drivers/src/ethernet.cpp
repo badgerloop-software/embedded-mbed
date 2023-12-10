@@ -33,7 +33,7 @@ int EthernetClient::connect(void){
     net->disconnect();
     puts("Disconnected from any existing connections");
     puts("Setting static IP");
-    net->set_network((SocketAddress)IP,(SocketAddress)MASK,(SocketAddress)GATEWAY);
+    //net->set_network((SocketAddress)IP,(SocketAddress)MASK,(SocketAddress)GATEWAY);
     puts("Closing socket if already open");
     this->sock.close();
     this->connected = 0;
