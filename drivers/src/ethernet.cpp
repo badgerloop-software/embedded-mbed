@@ -85,7 +85,7 @@ void EthernetClient::init(const char *server_ip, int port,
 int8_t EthernetClient::run(void){
     puts("Starting Ethernet Client");
     Thread *read = new Thread();
-    read.start(callback(this, &EthernetClient::read_thread));
+    read->start(callback(this, &EthernetClient::read_thread));
     Thread *write = new Thread();
     write->start(callback(this, &EthernetClient::write_thread));
     puts("Finished run function");
@@ -94,13 +94,13 @@ int8_t EthernetClient::run(void){
 
 void EthernetClient::write_thread(void){
 restart:
-    puts("[WT]: starting");
+    //puts("[WT]: starting");
     int status;
-    puts("[WT]: entering mainloop");
+    //puts("[WT]: entering mainloop");
     int size;
     void *data;
     while(1){
-        puts("[WT]: Begin cycle");
+      //  puts("[WT]: Begin cycle");
         if(!this->connected){
             status = this->connect();
             if(status < 0){
@@ -112,7 +112,7 @@ restart:
             // Connected
             // Fall through to rest of routine
         }
-        puts("[WT]: getting data");
+        //puts("[WT]: getting data");
         size = 0;
         data = NULL;
         if(this->data_write){
