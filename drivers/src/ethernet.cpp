@@ -9,6 +9,7 @@
 #include <cstdio>
 
 
+
 /**
  * Initializes an EthernetServer
  * this_ip -- the IP address of the Nucleo
@@ -31,6 +32,8 @@ int EthernetClient::connect(void){
     NetworkInterface *net = NetworkInterface::get_default_instance();
     net->disconnect();
     puts("Disconnected from any existing connections");
+    puts("Setting static IP");
+    net->set_network((SocketAddress)IP,(SocketAddress)MASK,(SocketAddress)GATEWAY);
     puts("Closing socket if already open");
     this->sock.close();
     this->connected = 0;
@@ -40,11 +43,17 @@ int EthernetClient::connect(void){
     net->get_netmask(&mask);
     SocketAddress gateway;
     net->get_gateway(&gateway);
-    net->set_network(((SocketAddress)"192.168.1.15"), mask, gateway);
+    //net->set_network(((SocketAddress)"192.168.1.15"), mask, gateway);
+    SocketAddress tmp_ip; 
+    net->get_ip_address(&tmp_ip);
+    const char *p_ip = tmp_ip.get_ip_address();
+    printf("IP address: %s\n", p_ip ? p_ip : "None");
+    puts("Opening socket...");
     if(this->sock.open(net) != NSAPI_ERROR_OK){
         this->connected = 0;
         return -1;
     }
+    puts("Attempt: Connecting...");
     //this->sock.set_blocking(true);
     if(this->sock.connect(*(this->server_address)) < 0){
         this->connected = 0;
@@ -150,6 +159,7 @@ void EthernetClient::read_thread(void){
             // No data to find, or error
             continue;
         }
+        recv_size = status;
         if(this->data_recv){
             puts("RT: Calling data_recv");
             this->data_recv((void*)this->rbuffer, recv_size);
