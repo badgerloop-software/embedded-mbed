@@ -155,7 +155,7 @@ void EthernetClient::read_thread(void){
             continue;
         }
         status = this->sock.recv(this->rbuffer, 2048);
-        if(status != NSAPI_ERROR_OK){
+        if(status <= NSAPI_ERROR_OK){
             // No data to find, or error
             continue;
         }
