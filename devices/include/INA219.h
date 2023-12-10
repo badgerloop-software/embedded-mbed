@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "stdint.h"
-#include "i2cdevice.cpp"
+#include "i2cdevice.h"
 
 
 //A class which represents an instance of an INA Driver for the i2c commmuncation
@@ -63,62 +63,61 @@
 
 #define I2C_BUS_ERROR    0xFF
 
-class INADriver : public I2CDevice{
+class INADriver : public I2CDevice {
     private:
+        enum class INARegister : uint8_t {
+            CONFIG = 0x00,
+            SHUNTVOLTAGE = 0x01,
+            BUSVOLTAGE = 0x02,
+            POWER = 0x03,
+            CURRENT = 0x04,
+            CALIBRATE = 0x05
+        };
+
         uint8_t shunt_resistor;
         uint8_t error_code = 0;
 
     public: 
+        //Constructor
+        // Takes in the I2C bus pointer as well as the subordinate address. Shunt resistor is used for calulations
+        INADriver(I2C* p_i2cBus, uint8_t p_subordinate_address, uint8_t p_shunt_resistor);
 
-    enum INARegister : uint8_t {
-        CONFIG = 0x00,
-        SHUNTVOLTAGE = 0x01,
-        BUSVOLTAGE = 0x02,
-        POWER = 0x03,
-        CURRENT = 0x04,
-        CALIBRATE = 0x05
-    };
+        // Function that can be called after initialization to check hardware connection
+        // Returns 0 if successfully connected to INA device, 1 if error
+        int testConnection();
 
-    //Constructor
-    // Takes in the I2C bus pointer as well as the subordinate address. Shunt resistor is used for calulations
-    INADriver(I2C* p_i2cBus, uint8_t p_subordinate_address, uint8_t p_shunt_resistor);
+        //Individual R/W Registers
+        int readConfigRegister(char p_data[], int p_numBytes);
+        int writeConfigRegister(char p_data[], int p_numBytes);
 
-    //GENERAL R/W Registers
-    int readRegisterINA(INARegister p_reg, char p_buffer[], int p_numBytes);
-    int writeRegisterINA(INARegister p_reg, char p_buffer[], int p_numBytes);
+        int readCalibrationRegister(char p_data[], int p_numBytes);
+        int writeCalibrationRegister(char p_data[], int p_numBytes);
 
-    //Individual R/W Registers
-    int readConfigRegister(char p_data[], int p_numBytes);
-    int writeConfigRegister(char p_data[], int p_numBytes);
+        int readShuntVoltageRegister(char p_data[], int p_numBytes);
 
-    int readCalibrationRegister(char p_data[], int p_numBytes);
-    int writeCalibrationRegister(char p_data[], int p_numBytes);
+        int readBusVoltageRegister(char p_data[], int p_numBytes);
 
-    int readShuntVoltageRegister(char p_data[], int p_numBytes);
+        int readPowerRegister(char p_data[], int p_numBytes);
 
-    int readBusVoltageRegister(char p_data[], int p_numBytes);
+        int readCurrentRegister(char p_data[], int p_numBytes);
 
-    int readPowerRegister(char p_data[], int p_numBytes);
+        double conversionMath(uint16_t raw_data);
 
-    int readCurrentRegister(char p_data[], int p_numBytes);
-
-    double conversionMath(uint16_t raw_data);
-
-    //Set bit 15 of reg 0x00 to reset
-    //We only call this if we have a valid bus (a.k.a. constructor worked)
-    int resetINA();
-    //Calulate Current from voltage I = V/R
-    uint16_t calculateVoltage(uint16_t p_voltage) {
-    // this is kinda sudo code. may need to change variable types
-        return p_voltage / shunt_resistor;
-    }
-    
-    //Calculate Power from voltage P=VI
-    uint16_t calculatePower(uint16_t p_voltage) {
-        return (p_voltage / shunt_resistor) * p_voltage;
-    }
-    //Destructor
-    ~INADriver();
+        //Set bit 15 of reg 0x00 to reset
+        //We only call this if we have a valid bus (a.k.a. constructor worked)
+        int resetINA();
+        //Calulate Current from voltage I = V/R
+        uint16_t calculateVoltage(uint16_t p_voltage) {
+        // this is kinda sudo code. may need to change variable types
+            return p_voltage / shunt_resistor;
+        }
+        
+        //Calculate Power from voltage P=VI
+        uint16_t calculatePower(uint16_t p_voltage) {
+            return (p_voltage / shunt_resistor) * p_voltage;
+        }
+        //Destructor
+        ~INADriver();
 
 };
 
