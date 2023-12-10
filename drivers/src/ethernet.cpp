@@ -151,12 +151,15 @@ void EthernetClient::read_thread(void){
     while(1){
         puts("[RT]: Begin cycle");
         if(!connected){
-            wait_us(CONNECTION_DELAY_US);
+            puts("no connection, stalling");
+            wait_us(1000000);// Use 1 second to reduce latency
             continue;
         }
         status = this->sock.recv(this->rbuffer, 2048);
+        printf("Read returned status %d\n", status);
         if(status <= NSAPI_ERROR_OK){
             // No data to find, or error
+            puts("Error");
             continue;
         }
         recv_size = status;
