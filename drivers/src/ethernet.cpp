@@ -59,7 +59,7 @@ int EthernetClient::connect(void){
         this->connected = 0;
         return -2;
     }
-    this->sock.set_timeout(HEARTBEAT_DELAY_US/1000); // TODO change this?
+    this->sock.set_timeout(5000); // TODO change this?
     // Connected
     this->connected = 1;
     return 0;
@@ -126,8 +126,8 @@ restart:
         }
         status = this->sock.send(data, size);
         if(status < 0){
-            puts("[WT]: timeout, disconnect");
-            puts("Debug information:");
+            printf("[WT]: timeout, disconnect");
+            printf("Debug information:");
             printf("NSAPI error code: %d\n", status);
             this->connected = 0;
         }
@@ -149,22 +149,22 @@ void EthernetClient::read_thread(void){
     int recv_size;
     int status;
     while(1){
-        puts("[RT]: Begin cycle");
+        //puts("[RT]: Begin cycle");
         if(!connected){
-            puts("no connection, stalling");
+            //puts("no connection, stalling");
             wait_us(1000000);// Use 1 second to reduce latency
             continue;
         }
         status = this->sock.recv(this->rbuffer, 2048);
-        printf("Read returned status %d\n", status);
+        //printf("Read returned status %d\n", status);
         if(status <= NSAPI_ERROR_OK){
             // No data to find, or error
-            puts("Error");
+            //puts("Error");
             continue;
         }
         recv_size = status;
         if(this->data_recv){
-            puts("RT: Calling data_recv");
+            //puts("RT: Calling data_recv");
             this->data_recv((void*)this->rbuffer, recv_size);
         }else{
             puts("RT: Undefined data_recv. Default behaviour treat as string");
