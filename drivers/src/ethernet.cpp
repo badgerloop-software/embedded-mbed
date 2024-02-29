@@ -42,7 +42,7 @@ int EthernetClient::connect(void) {
   net->disconnect();
   dbg("Disconnected from any existing connections");
   dbg("(not) Setting static IP");
-  // net->set_network((SocketAddress)IP,(SocketAddress)MASK,(SocketAddress)GATEWAY);
+  net->set_network((SocketAddress)IP,(SocketAddress)MASK,(SocketAddress)GATEWAY);
   dbg("Closing socket if already open");
   this->sock.close();
   this->connected = 0;
