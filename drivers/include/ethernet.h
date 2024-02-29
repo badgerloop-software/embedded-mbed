@@ -18,11 +18,11 @@ Server implementation on Nucleo for communication with the pi
 #define EDBG
 
 #define IP          "192.168.1.15"   //Here place your static IP of Mbed
-#define GATEWAY     "0.0.0.0"
-#define MASK        "255.255.255.0"
+#define GATEWAY     "192.168.1.200"
+#define MASK        "255.255.0.0"
 
-#define NETMASK     "255.255.255.0"
-#define GATEWAY     "0.0.0.0"
+#define NETMASK     "255.255.0.0"
+#define GATEWAY     "192.168.1.200"
 
 #define HEARTBEAT_DELAY_US 50000 // 20 times per second
 #define CONNECTION_DELAY_US 2000000 // 1 time per second
