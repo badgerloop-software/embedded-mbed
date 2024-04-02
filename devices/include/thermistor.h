@@ -31,6 +31,10 @@ const Thermistor_Constants NCP21XM472J03RA_Constants = {
     .add_const = 253.11
 };
 
+const Thermistor_Constants NXRT15XH103FA1B040_Constants = {
+    .mult_const = -28.1,
+    .add_const = 95.6
+};
 
 class Thermistor {
   private:
