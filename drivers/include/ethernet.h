@@ -24,7 +24,7 @@ Server implementation on Nucleo for communication with the pi
 #define NETMASK     "255.255.0.0"
 #define GATEWAY     "192.168.1.200"
 
-#define HEARTBEAT_DELAY_US 50000 // 20 times per second
+#define HEARTBEAT_DELAY_US 100000 // 10 times per second
 #define CONNECTION_DELAY_US 2000000 // 1 time per second
 #define CONNECTION_TIMEOUT_US_WRITE 1000000 // 1 second
 
