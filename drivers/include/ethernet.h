@@ -15,7 +15,7 @@ Server implementation on Nucleo for communication with the pi
 #include "limits.h"
 #include "stdbool.h"
 
-#define EDBG
+//#define EDBG
 
 #define IP          "192.168.1.15"   //Here place your static IP of Mbed
 #define GATEWAY     "192.168.1.200"

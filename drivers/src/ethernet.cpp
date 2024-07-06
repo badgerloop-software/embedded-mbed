@@ -72,7 +72,7 @@ int EthernetClient::connect(void) {
     this->connected = 0;
     return -2;
   }
-  this->sock.set_timeout(5000); // TODO change this?
+  this->sock.set_timeout(5000); // all operations can take up to 5 seconds. This is NOT a wait_ms()
   // Connected
   this->connected = 1;
   return 0;
@@ -119,7 +119,7 @@ restart:
       status = this->connect();
       if (status < 0) {
         // Not connected
-        // wait_us(CONNECTION_DELAY_US);
+        wait_us(CONNECTION_DELAY_US);
         #ifdef EDBG
         printf("Socket connection failed! Status: %d\n", status);
         #endif
