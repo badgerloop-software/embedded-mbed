@@ -119,7 +119,7 @@ restart:
       status = this->connect();
       if (status < 0) {
         // Not connected
-        // wait_us(CONNECTION_DELAY_US);
+        wait_us(CONNECTION_DELAY_US);
         #ifdef EDBG
         printf("Socket connection failed! Status: %d\n", status);
         #endif
