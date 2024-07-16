@@ -98,9 +98,9 @@ void EthernetClient::init(const char *server_ip, int port,
 
 int8_t EthernetClient::run(void) {
   dbg("Starting Ethernet Client");
-  Thread *read = new Thread();
+  Thread *read = new Thread(osPriorityNormal, 8192);
   read->start(callback(this, &EthernetClient::read_thread));
-  Thread *write = new Thread();
+  Thread *write = new Thread(osPriorityNormal, 8192);
   write->start(callback(this, &EthernetClient::write_thread));
   dbg("Finished run function");
   return 0;
